@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduGradeMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduGrade">
+        <id column="id" property="id"/>
+        <result column="student_id" property="studentId"/>
+        <result column="course_id" property="courseId"/>
+        <result column="teaching_assignment_id" property="teachingAssignmentId"/>
+        <result column="semester" property="semester"/>
+        <result column="midterm_score" property="midtermScore"/>
+        <result column="final_score" property="finalScore"/>
+        <result column="practice_score" property="practiceScore"/>
+        <result column="total_score" property="totalScore"/>
+        <result column="makeup_score" property="makeupScore"/>
+        <result column="grade_status" property="gradeStatus"/>
+        <result column="input_by" property="inputBy"/>
+        <result column="input_time" property="inputTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="student_name" property="studentName"/>
+        <result column="student_no" property="studentNo"/>
+        <result column="course_name" property="courseName"/>
+        <result column="class_name" property="className"/>
+        <result column="credit" property="credit"/>
+        <result column="course_code" property="courseCode"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+            g.*,
+            s.name as student_name,
+            s.student_no,
+            co.course_name
+        FROM edu_grade g
+        LEFT JOIN edu_student s ON g.student_id = s.id
+        LEFT JOIN edu_course co ON g.course_id = co.id
+        WHERE g.id = #{id}
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT
+            g.*,
+            s.name as student_name,
+            s.student_no,
+            co.course_name,
+            cl.class_name
+        FROM edu_grade g
+        LEFT JOIN edu_student s ON g.student_id = s.id
+        LEFT JOIN edu_course co ON g.course_id = co.id
+        LEFT JOIN edu_class cl ON s.class_id = cl.id
+        <where>
+            <if test="studentId != null">
+                AND g.student_id = #{studentId}
+            </if>
+            <if test="courseId != null">
+                AND g.course_id = #{courseId}
+            </if>
+            <if test="semester != null and semester != ''">
+                AND g.semester = #{semester}
+            </if>
+            <if test="gradeStatus != null">
+                AND g.grade_status = #{gradeStatus}
+            </if>
+            <if test="teachingAssignmentId != null">
+                AND g.teaching_assignment_id = #{teachingAssignmentId}
+            </if>
+        </where>
+        ORDER BY g.id DESC
+    </select>
+
+    <select id="selectByStudentId" resultMap="BaseResultMap">
+        SELECT
+            g.*,
+            co.course_name,
+            co.course_code,
+            co.credits as credit
+        FROM edu_grade g
+        LEFT JOIN edu_course co ON g.course_id = co.id
+        WHERE g.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND g.semester = #{semester}
+        </if>
+        ORDER BY g.semester DESC, g.id DESC
+    </select>
+
+    <select id="selectByTeachingAssignment" resultMap="BaseResultMap">
+        SELECT
+            g.id, g.midterm_score, g.final_score, g.practice_score, g.total_score,
+            g.makeup_score, g.grade_status, g.input_by, g.input_time,g.create_time,g.update_time,
+            cs.teaching_assignment_id,
+            ta.semester,
+            ta.course_id,
+            s.name as student_name,
+            s.student_no,
+            s.id as student_id
+        FROM edu_teaching_assignment ta
+            left join edu_course_selection cs on cs.teaching_assignment_id = ta.id
+            left join edu_student s on s.id = cs.student_id
+            LEFT JOIN edu_grade g ON g.student_id = s.id AND g.teaching_assignment_id = #{teachingAssignmentId}
+        WHERE ta.id = #{teachingAssignmentId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_grade (
+            student_id, course_id, teaching_assignment_id, semester,
+            midterm_score, final_score, practice_score, total_score,
+            makeup_score, grade_status, input_by, input_time
+        )
+        VALUES (
+            #{studentId}, #{courseId}, #{teachingAssignmentId}, #{semester},
+            #{midtermScore}, #{finalScore}, #{practiceScore}, #{totalScore},
+            #{makeupScore}, #{gradeStatus}, #{inputBy}, #{inputTime}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE edu_grade
+        <set>
+            <if test="midtermScore != null">midterm_score = #{midtermScore},</if>
+            <if test="finalScore != null">final_score = #{finalScore},</if>
+            <if test="practiceScore != null">practice_score = #{practiceScore},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="makeupScore != null">makeup_score = #{makeupScore},</if>
+            <if test="gradeStatus != null">grade_status = #{gradeStatus},</if>
+            <if test="inputBy != null">input_by = #{inputBy},</if>
+            <if test="inputTime != null">input_time = #{inputTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <insert id="batchInsert">
+        INSERT INTO edu_grade (student_id, course_id, teaching_assignment_id, semester, grade_status)
+        VALUES
+        <foreach collection="list" item="g" separator=",">
+            (#{g.studentId}, #{g.courseId}, #{g.teachingAssignmentId}, #{g.semester}, 0)
+        </foreach>
+    </insert>
+
+    <update id="batchUpdate">
+        <foreach collection="list" item="g" separator=";">
+            UPDATE edu_grade
+            SET midterm_score = #{g.midtermScore},
+                final_score = #{g.finalScore},
+                practice_score = #{g.practiceScore},
+                total_score = #{g.totalScore},
+                grade_status = #{g.gradeStatus},
+                input_by = #{g.inputBy},
+                input_time = #{g.inputTime}
+            WHERE id = #{g.id}
+        </foreach>
+    </update>
+
+    <select id="selectStatistics" resultType="map">
+        SELECT
+            ROUND(AVG(total_score), 3) as avgScore,
+            MAX(total_score) as maxScore,
+            MIN(total_score) as minScore,
+            COUNT(1) as totalCount,
+            SUM(CASE WHEN total_score >= 60 THEN 1 ELSE 0 END) as passCount,
+            ROUND(SUM(CASE WHEN total_score >= 60 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) as passRate,
+            ROUND(SUM(CASE WHEN total_score >= 90 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1) as excellentRate,
+            ROUND(STDDEV_POP(total_score), 2) as stdDev
+        FROM edu_grade g
+        LEFT JOIN edu_student s ON g.student_id = s.id
+        <where>
+            <if test="courseId != null">
+                AND g.course_id = #{courseId}
+            </if>
+            <if test="classId != null">
+                AND s.class_id = #{classId}
+            </if>
+            <if test="semester != null and semester != ''">
+                AND g.semester = #{semester}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectScoreDistribution" resultType="map">
+        SELECT
+            t.level,
+            t.count,
+            ROUND(t.count * 100.0 / GREATEST(t.total, 1), 1) as percentage
+        FROM (
+            SELECT
+                CASE
+                    WHEN total_score >= 90 THEN '优秀'
+                    WHEN total_score >= 80 THEN '良好'
+                    WHEN total_score >= 70 THEN '中等'
+                    WHEN total_score >= 60 THEN '及格'
+                    ELSE '不及格'
+                END as level,
+                COUNT(1) as count,
+                (SELECT COUNT(1) FROM edu_grade g2
+                    LEFT JOIN edu_student s2 ON g2.student_id = s2.id
+                    WHERE 1=1
+                    <if test="courseId != null">
+                        AND g2.course_id = #{courseId}
+                    </if>
+                    <if test="classId != null">
+                        AND s2.class_id = #{classId}
+                    </if>
+                    <if test="semester != null and semester != ''">
+                        AND g2.semester = #{semester}
+                    </if>
+                ) as total
+            FROM edu_grade g
+            LEFT JOIN edu_student s ON g.student_id = s.id
+            <where>
+                <if test="courseId != null">
+                    AND g.course_id = #{courseId}
+                </if>
+                <if test="classId != null">
+                    AND s.class_id = #{classId}
+                </if>
+                <if test="semester != null and semester != ''">
+                    AND g.semester = #{semester}
+                </if>
+            </where>
+            GROUP BY level
+        ) t
+    </select>
+
+</mapper>

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduAnnouncementMapper">
+    
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduAnnouncement">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="priority" property="priority"/>
+        <result column="target_type" property="targetType"/>
+        <result column="publisher_id" property="publisherId"/>
+        <result column="publisher_name" property="publisherName"/>
+        <result column="publish_time" property="publishTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="is_read" property="isRead"/>
+    </resultMap>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM edu_announcement WHERE id = #{id}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT * FROM edu_announcement
+        <where>
+            <if test="title != null and title != ''">
+                AND title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="targetType != null and targetType != ''">
+                AND target_type = #{targetType}
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY priority DESC, publish_time DESC
+    </select>
+    
+    <select id="selectByTargetType" resultMap="BaseResultMap">
+        SELECT 
+            a.*,
+            (SELECT COUNT(1) FROM edu_announcement_read r 
+             WHERE r.announcement_id = a.id AND r.user_id = #{userId}) > 0 as is_read
+        FROM edu_announcement a
+        WHERE a.status = 1 
+          AND (a.target_type = 'ALL' OR a.target_type = #{targetType})
+        ORDER BY a.priority DESC, a.publish_time DESC
+    </select>
+    
+    <select id="selectLatest" resultType="map">
+        SELECT 
+            id,
+            title,
+            priority,
+            target_type as targetType,
+            publisher_name as publisherName,
+            publish_time as publishTime
+        FROM edu_announcement
+        WHERE status = 1
+        ORDER BY priority DESC, publish_time DESC
+        LIMIT #{limit}
+    </select>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_announcement (
+            title, 
+            content, 
+            priority, 
+            target_type, 
+            publisher_id, 
+            publisher_name, 
+            publish_time, 
+            status
+        ) VALUES (
+            #{title}, 
+            #{content}, 
+            #{priority}, 
+            #{targetType}, 
+            #{publisherId}, 
+            #{publisherName}, 
+            #{publishTime}, 
+            #{status}
+        )
+    </insert>
+    
+    <update id="update">
+        UPDATE edu_announcement
+        <set>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="priority != null">
+                priority = #{priority},
+            </if>
+            <if test="targetType != null">
+                target_type = #{targetType},
+            </if>
+            <if test="publishTime != null">
+                publish_time = #{publishTime},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM edu_announcement 
+        WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM edu_announcement 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_announcement a
+        WHERE a.status = 1 
+          AND (a.target_type = 'ALL' OR a.target_type = #{targetType})
+          AND NOT EXISTS (
+              SELECT 1 FROM edu_announcement_read r 
+              WHERE r.announcement_id = a.id AND r.user_id = #{userId}
+          )
+    </select>
+    
+    <insert id="markAsRead">
+        INSERT IGNORE INTO edu_announcement_read (announcement_id, user_id) 
+        VALUES (#{announcementId}, #{userId})
+    </insert>
+    
+</mapper>

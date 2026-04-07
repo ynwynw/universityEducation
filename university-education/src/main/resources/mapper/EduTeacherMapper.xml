@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduTeacherMapper">
+    
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduTeacher">
+        <id column="id" property="id"/>
+        <result column="teacher_no" property="teacherNo"/>
+        <result column="name" property="name"/>
+        <result column="gender" property="gender"/>
+        <result column="birth_date" property="birthDate"/>
+        <result column="id_card" property="idCard"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="college_id" property="collegeId"/>
+        <result column="title" property="title"/>
+        <result column="education" property="education"/>
+        <result column="major_studied" property="majorStudied"/>
+        <result column="entry_date" property="entryDate"/>
+        <result column="status" property="status"/>
+        <result column="avatar" property="avatar"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="college_name" property="collegeName"/>
+    </resultMap>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+            t.*,
+            c.college_name
+        FROM edu_teacher t
+        LEFT JOIN edu_college c ON t.college_id = c.id
+        WHERE t.id = #{id}
+    </select>
+    
+    <select id="selectByTeacherNo" resultMap="BaseResultMap">
+        SELECT 
+            t.*,
+            c.college_name
+        FROM edu_teacher t
+        LEFT JOIN edu_college c ON t.college_id = c.id
+        WHERE t.teacher_no = #{teacherNo}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT 
+            t.*,
+            c.college_name
+        FROM edu_teacher t
+        LEFT JOIN edu_college c ON t.college_id = c.id
+        <where>
+            <if test="teacherNo != null and teacherNo != ''">
+                AND t.teacher_no LIKE CONCAT('%', #{teacherNo}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                AND t.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="collegeId != null">
+                AND t.college_id = #{collegeId}
+            </if>
+            <if test="title != null and title != ''">
+                AND t.title = #{title}
+            </if>
+            <if test="education != null and education != ''">
+                AND t.education = #{education}
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+        </where>
+        ORDER BY t.id DESC
+    </select>
+    
+    <select id="selectByCollegeId" resultMap="BaseResultMap">
+        SELECT * 
+        FROM edu_teacher 
+        WHERE college_id = #{collegeId} AND status = 1
+    </select>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_teacher (
+            teacher_no,
+            name,
+            gender,
+            birth_date,
+            id_card,
+            phone,
+            email,
+            college_id,
+            title,
+            education,
+            major_studied,
+            entry_date,
+            status,
+            avatar
+        ) VALUES (
+            #{teacherNo},
+            #{name},
+            #{gender},
+            #{birthDate},
+            #{idCard},
+            #{phone},
+            #{email},
+            #{collegeId},
+            #{title},
+            #{education},
+            #{majorStudied},
+            #{entryDate},
+            #{status},
+            #{avatar}
+        )
+    </insert>
+    
+    <update id="update">
+        UPDATE edu_teacher
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="gender != null">
+                gender = #{gender},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate},
+            </if>
+            <if test="idCard != null">
+                id_card = #{idCard},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="collegeId != null">
+                college_id = #{collegeId},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="education != null">
+                education = #{education},
+            </if>
+            <if test="majorStudied != null">
+                major_studied = #{majorStudied},
+            </if>
+            <if test="entryDate != null">
+                entry_date = #{entryDate},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM edu_teacher 
+        WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM edu_teacher 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="checkTeacherNoExists" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_teacher 
+        WHERE teacher_no = #{teacherNo}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+    
+    <select id="count" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_teacher
+    </select>
+    
+</mapper>

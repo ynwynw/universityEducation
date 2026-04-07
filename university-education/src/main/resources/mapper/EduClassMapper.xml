@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduClassMapper">
+    
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduClass">
+        <id column="id" property="id"/>
+        <result column="class_name" property="className"/>
+        <result column="major_id" property="majorId"/>
+        <result column="enrollment_year" property="enrollmentYear"/>
+        <result column="class_no" property="classNo"/>
+        <result column="student_count" property="studentCount"/>
+        <result column="counselor" property="counselor"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="major_name" property="majorName"/>
+        <result column="college_id" property="collegeId"/>
+        <result column="college_name" property="collegeName"/>
+    </resultMap>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+            cl.*,
+            m.major_name,
+            m.college_id,
+            c.college_name
+        FROM edu_class cl
+        LEFT JOIN edu_major m ON cl.major_id = m.id
+        LEFT JOIN edu_college c ON m.college_id = c.id
+        WHERE cl.id = #{id}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT 
+            cl.*,
+            m.major_name,
+            m.college_id,
+            c.college_name
+        FROM edu_class cl
+        LEFT JOIN edu_major m ON cl.major_id = m.id
+        LEFT JOIN edu_college c ON m.college_id = c.id
+        <where>
+            <if test="className != null and className != ''">
+                AND cl.class_name LIKE CONCAT('%', #{className}, '%')
+            </if>
+            <if test="majorId != null">
+                AND cl.major_id = #{majorId}
+            </if>
+            <if test="collegeId != null">
+                AND m.college_id = #{collegeId}
+            </if>
+            <if test="enrollmentYear != null">
+                AND cl.enrollment_year = #{enrollmentYear}
+            </if>
+            <if test="status != null">
+                AND cl.status = #{status}
+            </if>
+        </where>
+        ORDER BY cl.enrollment_year DESC, cl.class_name ASC
+    </select>
+    
+    <select id="selectByMajorId" resultMap="BaseResultMap">
+        SELECT * 
+        FROM edu_class 
+        WHERE major_id = #{majorId} AND status = 1
+        ORDER BY enrollment_year DESC, class_no ASC
+    </select>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_class (
+            class_name,
+            major_id,
+            enrollment_year,
+            class_no,
+            student_count,
+            counselor,
+            status
+        ) VALUES (
+            #{className},
+            #{majorId},
+            #{enrollmentYear},
+            #{classNo},
+            #{studentCount},
+            #{counselor},
+            #{status}
+        )
+    </insert>
+    
+    <update id="update">
+        UPDATE edu_class
+        <set>
+            <if test="className != null">
+                class_name = #{className},
+            </if>
+            <if test="majorId != null">
+                major_id = #{majorId},
+            </if>
+            <if test="enrollmentYear != null">
+                enrollment_year = #{enrollmentYear},
+            </if>
+            <if test="classNo != null">
+                class_no = #{classNo},
+            </if>
+            <if test="studentCount != null">
+                student_count = #{studentCount},
+            </if>
+            <if test="counselor != null">
+                counselor = #{counselor},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM edu_class 
+        WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM edu_class 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="checkNameExists" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_class 
+        WHERE class_name = #{className}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+    
+    <select id="countByMajorId" resultType="int">
+        SELECT COUNT(1) FROM edu_class WHERE major_id = #{majorId}
+    </select>
+    
+    <update id="updateStudentCount">
+        UPDATE edu_class SET student_count = #{count} WHERE id = #{id}
+    </update>
+    
+    <select id="selectByClassName" resultMap="BaseResultMap">
+        SELECT *  FROM edu_class WHERE class_name = #{className} LIMIT 1
+    </select>
+    
+</mapper>

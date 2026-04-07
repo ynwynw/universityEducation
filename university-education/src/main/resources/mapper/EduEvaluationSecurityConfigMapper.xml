@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduEvaluationSecurityConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduEvaluationSecurityConfig">
+        <id column="id" property="id"/>
+        <result column="semester" property="semester"/>
+        <result column="remove_extreme" property="removeExtreme"/>
+        <result column="extreme_percent" property="extremePercent"/>
+        <result column="min_valid_count" property="minValidCount"/>
+        <result column="anomaly_threshold" property="anomalyThreshold"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM edu_evaluation_security_config WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT * FROM edu_evaluation_security_config
+        <where>
+            <if test="semester != null and semester != ''">
+                AND semester = #{semester}
+            </if>
+        </where>
+        ORDER BY semester DESC
+    </select>
+
+    <select id="selectBySemester" resultMap="BaseResultMap">
+        SELECT * FROM edu_evaluation_security_config WHERE semester = #{semester}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_evaluation_security_config (semester, remove_extreme, extreme_percent, min_valid_count, anomaly_threshold)
+        VALUES (#{semester}, #{removeExtreme}, #{extremePercent}, #{minValidCount}, #{anomalyThreshold})
+    </insert>
+
+    <update id="update">
+        UPDATE edu_evaluation_security_config
+        <set>
+            <if test="semester != null">semester = #{semester},</if>
+            <if test="removeExtreme != null">remove_extreme = #{removeExtreme},</if>
+            <if test="extremePercent != null">extreme_percent = #{extremePercent},</if>
+            <if test="minValidCount != null">min_valid_count = #{minValidCount},</if>
+            <if test="anomalyThreshold != null">anomaly_threshold = #{anomalyThreshold},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM edu_evaluation_security_config WHERE id = #{id}
+    </delete>
+
+</mapper>

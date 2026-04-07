@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduCourseCollegeLimitMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduCourseCollegeLimit">
+        <id column="id" property="id"/>
+        <result column="course_code" property="courseCode"/>
+        <result column="college_id" property="collegeId"/>
+        <result column="college_name" property="collegeName"/>
+        <result column="course_name" property="courseName"/>
+    </resultMap>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT ccl.id, ccl.course_code, ccl.college_id,
+               col.college_name, c.course_name
+        FROM edu_course_college_limit ccl
+        LEFT JOIN edu_college col ON ccl.college_id = col.id
+        LEFT JOIN edu_course c ON ccl.course_code = c.course_code
+        <where>
+            <if test="courseCode != null and courseCode != ''">
+                AND ccl.course_code = #{courseCode}
+            </if>
+            <if test="collegeId != null">
+                AND ccl.college_id = #{collegeId}
+            </if>
+        </where>
+        ORDER BY ccl.course_code, ccl.college_id
+    </select>
+
+    <select id="selectByCourseCode" resultMap="BaseResultMap">
+        SELECT ccl.id, ccl.course_code, ccl.college_id,
+               col.college_name
+        FROM edu_course_college_limit ccl
+        LEFT JOIN edu_college col ON ccl.college_id = col.id
+        WHERE ccl.course_code = #{courseCode}
+    </select>
+
+    <select id="checkExists" resultType="int">
+        SELECT COUNT(1) FROM edu_course_college_limit
+        WHERE course_code = #{courseCode} AND college_id = #{collegeId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_course_college_limit (course_code, college_id) VALUES (#{courseCode}, #{collegeId})
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM edu_course_college_limit WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduEvaluationMapper">
+
+    <select id="selectPendingCourses" resultType="map">
+        SELECT 
+            ta.id as assignmentId, 
+            c.id as courseId, 
+            c.course_code as courseCode, 
+            c.course_name as courseName,
+            t.id as teacherId, 
+            t.name as teacherName, 
+            ta.semester,
+            CASE WHEN e.id IS NOT NULL THEN 1 ELSE 0 END as evaluated
+        FROM edu_course_selection cs
+        JOIN edu_teaching_assignment ta ON cs.teaching_assignment_id = ta.id
+        JOIN edu_course c ON ta.course_id = c.id
+        JOIN edu_teacher t ON ta.teacher_id = t.id
+        LEFT JOIN edu_evaluation e ON e.evaluator_id = #{studentId} 
+            AND e.course_id = c.id 
+            AND e.target_teacher_id = t.id 
+            AND e.evaluator_type = 'student'
+        WHERE cs.student_id = #{studentId} 
+            AND cs.status = 1
+        ORDER BY ta.semester DESC
+    </select>
+
+    <select id="checkStudentEvaluated" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_evaluation 
+        WHERE evaluator_id = #{studentId} 
+            AND course_id = #{courseId} 
+            AND target_teacher_id = #{teacherId} 
+            AND evaluator_type = 'student'
+    </select>
+
+    <insert id="insertStudentEvaluation">
+        INSERT INTO edu_evaluation (
+            questionnaire_id, evaluator_id, evaluator_type, target_teacher_id, course_id, 
+            total_score, grade_level, comment, evaluation_time, is_valid, semester
+        )
+        VALUES (
+            #{questionnaireId}, #{studentId}, 'student', #{teacherId}, #{courseId}, 
+            #{totalScore}, #{gradeLevel}, #{comment}, NOW(), 1, #{semester}
+        )
+    </insert>
+
+    <select id="selectLastInsertId" resultType="long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <select id="selectPendingTeachers" resultType="map">
+        SELECT 
+            t.id as teacherId, 
+            t.name as teacherName, 
+            t.teacher_no as teacherNo, 
+            t.title, 
+            col.college_name as collegeName,
+            CASE WHEN e.id IS NOT NULL THEN 1 ELSE 0 END as evaluated
+        FROM edu_teacher t
+        JOIN edu_college col ON t.college_id = col.id
+        LEFT JOIN edu_evaluation e ON e.evaluator_id = #{teacherId} 
+            AND e.target_teacher_id = t.id 
+            AND e.evaluator_type = 'teacher'
+        WHERE t.id != #{teacherId} 
+            AND t.status = 1
+            AND t.college_id = (SELECT college_id FROM edu_teacher WHERE id = #{teacherId})
+        ORDER BY t.name
+    </select>
+
+    <select id="checkTeacherEvaluated" resultType="int">
+        SELECT COUNT(1) 
+        FROM edu_evaluation 
+        WHERE evaluator_id = #{evaluatorId} 
+            AND target_teacher_id = #{targetTeacherId} 
+            AND evaluator_type = 'teacher'
+    </select>
+
+    <insert id="insertTeacherEvaluation">
+        INSERT INTO edu_evaluation (
+            questionnaire_id, evaluator_id, evaluator_type, target_teacher_id, 
+            total_score, grade_level, comment, evaluation_time, is_valid, semester
+        )
+        VALUES (
+            #{questionnaireId}, #{evaluatorId}, 'teacher', #{targetTeacherId}, 
+            #{totalScore}, #{gradeLevel}, #{comment}, NOW(), 1, #{semester}
+        )
+    </insert>
+
+    <select id="selectTeacherResult" resultType="map">
+        SELECT 
+            AVG(total_score) as avgScore, 
+            COUNT(1) as totalCount,
+            (
+                SELECT grade_level 
+                FROM edu_evaluation 
+                WHERE target_teacher_id = #{teacherId} 
+                GROUP BY grade_level 
+                ORDER BY COUNT(1) DESC 
+                LIMIT 1
+            ) as gradeLevel
+        FROM edu_evaluation 
+        WHERE target_teacher_id = #{teacherId} 
+            AND is_valid = 1
+        <if test="semester != null and semester != ''">
+            AND semester = #{semester}
+        </if>
+    </select>
+
+    <select id="selectGradeDistribution" resultType="map">
+        SELECT 
+            grade_level as gradeLevel, 
+            COUNT(1) as count,
+            ROUND(
+                COUNT(1) * 100.0 / (
+                    SELECT COUNT(1) 
+                    FROM edu_evaluation 
+                    WHERE target_teacher_id = #{teacherId} AND is_valid = 1
+                ), 1
+            ) as percentage
+        FROM edu_evaluation 
+        WHERE target_teacher_id = #{teacherId} 
+            AND is_valid = 1
+        <if test="semester != null and semester != ''">
+            AND semester = #{semester}
+        </if>
+        GROUP BY grade_level 
+        ORDER BY grade_level
+    </select>
+
+    <select id="selectPage" resultType="map">
+        SELECT 
+            t.teacher_no as teacherNo, 
+            t.name as teacherName, 
+            col.college_name as collegeName,
+            AVG(e.total_score) as avgScore, 
+            COUNT(e.id) as evaluatorCount,
+            (
+                SELECT grade_level 
+                FROM edu_evaluation 
+                WHERE target_teacher_id = t.id 
+                GROUP BY grade_level 
+                ORDER BY COUNT(1) DESC 
+                LIMIT 1
+            ) as gradeLevel
+        FROM edu_teacher t
+        JOIN edu_college col ON t.college_id = col.id
+        LEFT JOIN edu_evaluation e ON e.target_teacher_id = t.id AND e.is_valid = 1
+        <where>
+            <if test="teacherId != null">
+                AND t.id = #{teacherId}
+            </if>
+            <if test="semester != null and semester != ''">
+                AND e.semester = #{semester}
+            </if>
+        </where>
+        GROUP BY t.id 
+        ORDER BY avgScore DESC
+    </select>
+
+    <select id="selectStatistics" resultType="map">
+        SELECT 
+            COUNT(DISTINCT e.target_teacher_id) as teacherCount, 
+            COUNT(e.id) as totalCount,
+            ROUND(AVG(e.total_score), 1) as avgScore,
+            ROUND(
+                SUM(CASE WHEN e.total_score >= 90 THEN 1 ELSE 0 END) * 100.0 / COUNT(1), 1
+            ) as excellentRate
+        FROM edu_evaluation e
+        JOIN edu_teacher t ON e.target_teacher_id = t.id
+        WHERE e.is_valid = 1
+        <if test="collegeId != null">
+            AND t.college_id = #{collegeId}
+        </if>
+        <if test="semester != null and semester != ''">
+            AND e.semester = #{semester}
+        </if>
+    </select>
+
+    <select id="selectScoresByTeacher" resultType="java.lang.Double">
+        SELECT total_score
+        FROM edu_evaluation
+        WHERE target_teacher_id = #{teacherId}
+            AND is_valid = 1
+        <if test="semester != null and semester != ''">
+            AND semester = #{semester}
+        </if>
+        ORDER BY total_score
+    </select>
+
+</mapper>

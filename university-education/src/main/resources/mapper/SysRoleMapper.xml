@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.SysRoleMapper">
+    
+    <resultMap id="BaseResultMap" type="com.edu.entity.SysRole">
+        <id column="id" property="id"/>
+        <result column="role_name" property="roleName"/>
+        <result column="role_key" property="roleKey"/>
+        <result column="sort" property="sort"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, role_name, role_key, sort, status, remark, create_time, update_time
+    </sql>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/> 
+        FROM sys_role 
+        WHERE id = #{id}
+    </select>
+    
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/> 
+        FROM sys_role
+        <where>
+            <if test="roleName != null and roleName != ''">
+                AND role_name LIKE CONCAT('%', #{roleName}, '%')
+            </if>
+            <if test="roleKey != null and roleKey != ''">
+                AND role_key = #{roleKey}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY sort ASC
+    </select>
+    
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/> 
+        FROM sys_role 
+        WHERE status = 1 
+        ORDER BY sort ASC
+    </select>
+    
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role (
+            role_name,
+            role_key,
+            sort,
+            status,
+            remark
+        ) VALUES (
+            #{roleName},
+            #{roleKey},
+            #{sort},
+            #{status},
+            #{remark}
+        )
+    </insert>
+    
+    <update id="update">
+        UPDATE sys_role
+        <set>
+            <if test="roleName != null">
+                role_name = #{roleName},
+            </if>
+            <if test="roleKey != null">
+                role_key = #{roleKey},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById">
+        DELETE FROM sys_role 
+        WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds">
+        DELETE FROM sys_role 
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="selectRoleKeysByUserId" resultType="string">
+        SELECT r.role_key 
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND r.status = 1
+    </select>
+    
+    <select id="selectRolesByUserId" resultMap="BaseResultMap">
+        SELECT r.* 
+        FROM sys_role r
+        INNER JOIN sys_user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND r.status = 1
+    </select>
+    
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/> 
+        FROM sys_role 
+        ORDER BY sort ASC
+    </select>
+    
+    <select id="selectByRoleKey" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="Base_Column_List"/> 
+        FROM sys_role 
+        WHERE role_key = #{roleKey} 
+        LIMIT 1
+    </select>
+    
+</mapper>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduTeachingMaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduTeachingMaterial">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="material_type" property="materialType"/>
+        <result column="course_id" property="courseId"/>
+        <result column="file_id" property="fileId"/>
+        <result column="teacher_id" property="teacherId"/>
+        <result column="teacher_name" property="teacherName"/>
+        <result column="audit_status" property="auditStatus"/>
+        <result column="auditor_id" property="auditorId"/>
+        <result column="auditor_name" property="auditorName"/>
+        <result column="audit_time" property="auditTime"/>
+        <result column="audit_remark" property="auditRemark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="course_name" property="courseName"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_path" property="filePath"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+            m.*,
+            c.course_name,
+            f.file_name as file_name,
+            f.file_path
+        FROM edu_teaching_material m
+        LEFT JOIN edu_course c ON m.course_id = c.id
+        LEFT JOIN sys_file_info f ON m.file_id = f.id
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="selectByTeacherId" resultMap="BaseResultMap">
+        SELECT
+            m.*,
+            c.course_name,
+            f.file_name as file_name,
+            f.file_path
+        FROM edu_teaching_material m
+        LEFT JOIN edu_course c ON m.course_id = c.id
+        LEFT JOIN sys_file_info f ON m.file_id = f.id
+        WHERE m.teacher_id = #{teacherId}
+        ORDER BY m.create_time DESC
+    </select>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT
+            m.*,
+            c.course_name,
+            f.file_name as file_name,
+            f.file_path
+        FROM edu_teaching_material m
+        LEFT JOIN edu_course c ON m.course_id = c.id
+        LEFT JOIN sys_file_info f ON m.file_id = f.id
+        <where>
+            <if test="auditStatus != null">
+                AND m.audit_status = #{auditStatus}
+            </if>
+            <if test="materialType != null and materialType != ''">
+                AND m.material_type = #{materialType}
+            </if>
+            <if test="courseId != null">
+                AND m.course_id = #{courseId}
+            </if>
+            <if test="title != null and title != ''">
+                AND m.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="teacherId != null">
+                AND m.teacher_id = #{teacherId}
+            </if>
+        </where>
+        ORDER BY m.create_time DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_teaching_material (
+            title, material_type, course_id, file_id,
+            teacher_id, teacher_name, audit_status
+        )
+        VALUES (
+            #{title}, #{materialType}, #{courseId}, #{fileId},
+            #{teacherId}, #{teacherName}, #{auditStatus}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE edu_teaching_material
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="materialType != null">material_type = #{materialType},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="fileId != null">file_id = #{fileId},</if>
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="auditorId != null">auditor_id = #{auditorId},</if>
+            <if test="auditorName != null">auditor_name = #{auditorName},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM edu_teaching_material WHERE id = #{id}
+    </delete>
+
+    <update id="resetAudit">
+        UPDATE edu_teaching_material
+        SET file_id = #{fileId},
+            audit_status = 0,
+            auditor_id = NULL,
+            auditor_name = NULL,
+            audit_time = NULL,
+            audit_remark = NULL
+        WHERE id = #{id}
+    </update>
+
+</mapper>

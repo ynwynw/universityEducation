@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduGradeWeightConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduGradeWeightConfig">
+        <id column="id" property="id"/>
+        <result column="exam_type" property="examType"/>
+        <result column="midterm_weight" property="midtermWeight"/>
+        <result column="final_weight" property="finalWeight"/>
+        <result column="practice_weight" property="practiceWeight"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT id, exam_type, midterm_weight, final_weight, practice_weight, status, create_time
+        FROM edu_grade_weight_config
+        ORDER BY id
+    </select>
+
+    <select id="selectByExamType" resultMap="BaseResultMap">
+        SELECT id, exam_type, midterm_weight, final_weight, practice_weight, status, create_time
+        FROM edu_grade_weight_config
+        WHERE exam_type = #{examType}
+    </select>
+
+    <update id="update">
+        UPDATE edu_grade_weight_config
+        <set>
+            <if test="midtermWeight != null">midterm_weight = #{midtermWeight},</if>
+            <if test="finalWeight != null">final_weight = #{finalWeight},</if>
+            <if test="practiceWeight != null">practice_weight = #{practiceWeight},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

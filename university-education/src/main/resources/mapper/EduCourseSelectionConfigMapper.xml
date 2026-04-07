@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.edu.mapper.EduCourseSelectionConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.edu.entity.EduCourseSelectionConfig">
+        <id column="id" property="id"/>
+        <result column="semester" property="semester"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="min_students" property="minStudents"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM edu_course_selection_config WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT * FROM edu_course_selection_config
+        <where>
+            <if test="semester != null and semester != ''">
+                AND semester LIKE CONCAT('%', #{semester}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectBySemester" resultMap="BaseResultMap">
+        SELECT * FROM edu_course_selection_config WHERE semester = #{semester}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO edu_course_selection_config (
+            semester, start_time, end_time, min_students, status
+        ) VALUES (
+            #{semester}, #{startTime}, #{endTime}, #{minStudents}, #{status}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE edu_course_selection_config
+        <set>
+            <if test="semester != null">semester = #{semester},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="minStudents != null">min_students = #{minStudents},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM edu_course_selection_config WHERE id = #{id}
+    </delete>
+
+</mapper>
